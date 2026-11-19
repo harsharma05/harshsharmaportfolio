@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Edit portfolio</title>
+<style>
+body{font:15px/1.5 system-ui,sans-serif;margin:0;background:#101010;color:#fff}
+main{max-width:820px;margin:0 auto;padding:90px 20px 80px}
+header{position:fixed;inset:0 0 auto;background:#10146C;padding:12px 20px;display:flex;gap:10px;align-items:center;z-index:5}
+header b{flex:1}
+button,.btn{font:inherit;padding:7px 14px;border:0;border-radius:6px;background:#fff;color:#101010;cursor:pointer}
+.s{background:#B9BCFF}
+input,textarea{width:100%;font:inherit;padding:8px;margin:3px 0 10px;border:1px solid #444;border-radius:6px;background:#1b1b1b;color:#fff}
+textarea{min-height:90px}
+label{font-size:13px;color:#B9BCFF}
+.item{border:1px solid #333;border-radius:8px;padding:12px;margin:8px 0}
+.bar{display:flex;gap:6px;align-items:center;margin-bottom:8px}
+.bar span{flex:1;font-size:13px;color:#999}
+h2{margin:36px 0 6px;font-size:22px}
+.pv{width:90px;height:60px;object-fit:cover;border-radius:4px;margin-bottom:6px}
+#msg{padding:10px;background:#1b1b1b;border-radius:6px;margin-bottom:16px}
+</style>
+</head>
+<body>
+<header><b>Edit portfolio</b><label class="btn">Add pictures<input id="up" type="file" accept="image/*" multiple hidden></label><button id="sv" class="s">Save changes</button></header>
+<main>
+<div id="msg">Loading…</div>
+<div id="tk" hidden>
+<p>One-time setup: create a GitHub token that can edit only this repository (steps are in the chat), paste it here, and press Connect. It is stored only in this browser.</p>
+<input id="t" type="password" placeholder="Paste token"><button id="go" class="s">Connect</button>
+</div>
+<div id="ed"></div>
+</main>
+<script>
+const R = "harsharma05/harshsharmaportfolio", B = "main";
+const A = p => `https://api.github.com/repos/${R}/contents/${p}`, $ = s => document.querySelector(s);
+const HEAD = "/* Edited with admin.html. You can also edit this file by hand on GitHub. */\n";
+let S, sha, tok = localStorage.getItem("gh") || "", prev = {};
+const H = () => ({ Authorization: "Bearer " + tok, Accept: "application/vnd.github+json" });
+const msg = t => $("#msg").textContent = t;
+const b64 = s => btoa(unescape(encodeURIComponent(s)));
+const el = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
+const blank = o => JSON.parse(JSON.stringify(o), (k, v) => k === "hidden" ? false : typeof v === "string" && k !== "type" ? "" : v);
+
+async function load() {
+  if (!tok) { msg("Paste your GitHub token below to start."); $("#tk").hidden = false; return; }
+  const r = await fetch(A("content.js") + "?ref=" + B, { headers: H() });
+  if (!r.ok) { msg("Could not load (error " + r.status + "). Check the token and try again."); $("#tk").hidden = false; return; }
+  const j = await r.json(); sha = j.sha;
+  const w = {}; new Function("window", decodeURIComponent(escape(atob(j.content.replace(/\s/g, "")))))(w);
+  S = w.SITE; S.awards.poster ??= ""; S.contact.phone ??= "";
+  S.films.forEach(f => { f.video.poster = f.video.poster || ""; });
+  $("#tk").hidden = true; msg("Loaded. Edit, then press Save changes."); draw();
+}
+
+function draw() {
+  const ed = $("#ed"); ed.innerHTML = "";
+  for (const k in S) { if (k === "nav") continue; ed.append(el("h2", 0, k[0].toUpperCase() + k.slice(1)), build(S, k)); }
+}
+
+function build(o, k) {
+  const v = o[k], d = el("div");
+  if (Array.isArray(v)) {
+    d.append(el("label", 0, k));
+    const keys = [...new Set(v.flatMap(x => x && typeof x === "object" ? Object.keys(x) : []))].filter(x => x !== "hidden");
+    v.forEach((it, n) => {
+      const row = el("div", "item"), bar = el("div", "bar");
+      bar.append(el("span", 0, "#" + (n + 1)));
+      if (it && typeof it === "object") {
+        const c = el("input"); c.type = "checkbox"; c.style.width = "auto"; c.style.margin = "0"; c.checked = !!it.hidden; c.onchange = () => { it.hidden = c.checked; };
+        bar.append(c, el("label", 0, "hide"));
+      }
+      [["↑", -1], ["↓", 1]].forEach(([t, dl]) => {
+        const b = el("button", 0, t);
+        b.onclick = () => { const m = n + dl; if (m < 0 || m >= v.length) return; v.splice(m, 0, v.splice(n, 1)[0]); draw(); };
+        bar.append(b);
+      });
+      const x = el("button", 0, "✕");
+      x.onclick = () => { if (confirm("Delete this item?")) { v.splice(n, 1); draw(); } };
+      bar.append(x); row.append(bar);
+      if (typeof it === "string") {
+        if (k === "stills") { const im = el("img", "pv"); im.src = prev[it] || it; row.append(im); }
+        row.append(build(v, n));
+      } else keys.forEach(kk => row.append(build(it, kk)));
+      d.append(row);
+    });
+    const a = el("button", 0, "+ Add");
+    a.onclick = () => { v.push(v.length && typeof v[0] === "object" ? blank(v[v.length - 1]) : ""); draw(); };
+    d.append(a);
+  } else if (v && typeof v === "object") {
+    d.append(el("label", 0, k)); for (const kk in v) d.append(build(v, kk));
+  } else {
+    d.append(el("label", 0, typeof k === "number" ? "" : (LB[k] || k)));
+    const i = el(typeof v === "string" && (v.length > 80 || ["text", "tagline", "note"].includes(k)) ? "textarea" : "input"); i.value = v == null ? "" : v;
+    i.oninput = () => { o[k] = i.value; }; d.append(i); if (k === "poster" || k === "logo") d.append(picker(o, k));
+  }
+  return d;
+}
+
+const LB = { meta: "line under title", text: "description (blank line = new paragraph)", poster: "poster picture", logo: "logo picture", phone: "phone number (optional)", highlight: "big highlight line", quote: "quote", badge: "tag", id: "video id", type: "video site (youtube or vimeo)", paras: "about text", cite: "under the quote", tagline: "tagline", note: "line under showreel" };
+const shrink = f => new Promise(res => {
+  const i = new Image();
+  i.onload = () => {
+    const s = Math.min(1, 1600 / Math.max(i.width, i.height)), c = document.createElement("canvas");
+    c.width = i.width * s; c.height = i.height * s; c.getContext("2d").drawImage(i, 0, 0, c.width, c.height);
+    res(c.toDataURL("image/jpeg", .8).split(",")[1]);
+  };
+  i.src = URL.createObjectURL(f);
+});
+
+const picker = (o, k) => {
+  const w = el("div"), f = el("input"); f.type = "file"; f.accept = "image/*";
+  if (o[k]) { const im = el("img", "pv"); im.src = prev[o[k]] || o[k]; w.append(im, el("br")); }
+  f.onchange = async () => {
+    const file = f.files[0]; if (!file) return;
+    const data = await shrink(file), name = file.name.replace(/\.[^.]+$/, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 30) + "-" + Date.now().toString(36) + ".jpg";
+    const r = await fetch(A(name), { method: "PUT", headers: H(), body: JSON.stringify({ message: "Add " + name, content: data, branch: B }) });
+    if (!r.ok) return msg("Upload failed (error " + r.status + ").");
+    prev[name] = "data:image/jpeg;base64," + data; o[k] = name; draw(); msg("Picture uploaded. Press Save changes to use it on the page.");
+  };
+  w.append(f); return w;
+};
+$("#up").onchange = async e => {
+  if (!S) return msg("Connect first.");
+  for (const f of e.target.files) {
+    const n = Math.max(0, ...S.stills.map(s => +((s.match(/(\d+)/) || [0, 0])[1]))) + 1;
+    const name = "still-" + String(n).padStart(2, "0") + ".jpg", data = await shrink(f);
+    const r = await fetch(A(name), { method: "PUT", headers: H(), body: JSON.stringify({ message: "Add " + name, content: data, branch: B }) });
+    if (!r.ok) return msg("Upload failed (error " + r.status + ").");
+    prev[name] = "data:image/jpeg;base64," + data; S.stills.push(name);
+  }
+  e.target.value = ""; draw(); msg("Pictures uploaded. Press Save changes to add them to the page.");
+};
+
+$("#sv").onclick = async () => {
+  if (!S) return;
+  const r = await fetch(A("content.js"), { method: "PUT", headers: H(), body: JSON.stringify({ message: "Update portfolio content", content: b64(HEAD + "window.SITE = " + JSON.stringify(S, null, 2) + ";\n"), sha, branch: B }) });
+  if (r.ok) { sha = (await r.json()).content.sha; msg("Saved. Your site updates in about a minute."); }
+  else msg("Save failed (error " + r.status + "). Reload this page and try again.");
+};
+$("#go").onclick = () => { tok = $("#t").value.trim(); localStorage.setItem("gh", tok); load(); };
+load();
+</script>
+</body>
+</html>
