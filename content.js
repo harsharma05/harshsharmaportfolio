@@ -97,7 +97,7 @@ window.SITE = {
 
   contact: {
     heading: "Let's make something.",
-    email: "your-email@example.com",   // <-- replace with your real email
+    email: "creativeharsh.05@gmail.com",   // <-- replace with your real email
     links: [                            // links with an empty url are hidden
       { label: "YouTube", url: "" },
       { label: "Instagram", url: "" },
