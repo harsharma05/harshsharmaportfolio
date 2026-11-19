@@ -1,9 +1,11 @@
 const S = window.SITE, $ = s => document.querySelector(s);
+// Pictures sit next to this file. If you ever move them into a folder, set IMG = "images/".
+const IMG = "";
 const esc = t => String(t ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const live = a => (a || []).filter(x => typeof x === "string" || !x.hidden);
 
 // Poster: your own still if set, else the YouTube thumbnail, else plain purple.
-const poster = v => v.poster ? `images/${v.poster}` : v.type === "youtube" ? `https://i.ytimg.com/vi/${v.id}/maxresdefault.jpg` : "";
+const poster = v => v.poster ? `${IMG}${v.poster}` : v.type === "youtube" ? `https://i.ytimg.com/vi/${v.id}/maxresdefault.jpg` : "";
 const embed = (t, id) => {
   const q = id.includes("?") ? "&" : "?";
   return t === "vimeo"
@@ -17,11 +19,11 @@ $("#nav").innerHTML = `<b>${esc(S.name)}</b><div>${S.nav.map(n => `<a href="#${n
 $("#hero").innerHTML = `<div class="w"><h1>${esc(S.name)}</h1><p class="tl">${esc(S.tagline)}</p>${vid(S.showreel, S.showreel.title)}<p class="cap">${esc(S.showreel.note)}</p></div>`;
 
 const A = S.awards;
-$("#awards").innerHTML = `<div class="w g"><img src="images/${esc(A.logo)}" alt="${esc(A.festival)} logo"><div><h2>${esc(A.title)}</h2><ul>${A.list.map(x => `<li>${esc(x)}</li>`).join("")}</ul></div></div>`;
+$("#awards").innerHTML = `<div class="w g"><img src="${IMG}${esc(A.logo)}" alt="${esc(A.festival)} logo"><div><h2>${esc(A.title)}</h2><ul>${A.list.map(x => `<li>${esc(x)}</li>`).join("")}</ul></div></div>`;
 
 $("#film-list").innerHTML = live(S.films).map(f => `<article class="film">${vid(f.video, f.title)}<div class="tx"><div class="meta">${esc(f.meta)}</div><h3>${esc(f.title)}</h3>${f.highlight ? `<blockquote class="big">${esc(f.highlight)}</blockquote>` : ""}<p>${esc(f.text)}</p>${f.quote ? `<blockquote>${esc(f.quote)}</blockquote>` : ""}${f.badge ? `<span class="tag">${esc(f.badge)}</span>` : ""}</div></article>`).join("");
 
-$("#still-list").innerHTML = live(S.stills).map(s => `<img loading="lazy" src="images/${esc(s)}" alt="Still from a film by ${esc(S.name)}">`).join("");
+$("#still-list").innerHTML = live(S.stills).map(s => `<img loading="lazy" src="${IMG}${esc(s)}" alt="Still from a film by ${esc(S.name)}">`).join("");
 
 const B = S.about;
 $("#about-c").innerHTML = `<h2>About</h2><div class="g"><div>${B.paras.map(p => `<p>${esc(p)}</p>`).join("")}<blockquote>${esc(B.quote)}</blockquote><cite>${esc(B.cite)}</cite></div><div>${B.lists.map(l => `<h3>${esc(l.title)}</h3><ul>${l.items.map(i => `<li>${esc(i)}</li>`).join("")}</ul>`).join("")}</div></div>`;
